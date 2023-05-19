@@ -25,11 +25,11 @@ async function run() {
     // await client.connect();
     const toyCollection = client.db("toyDB").collection("toys");
 
-    app.post('/toys', async(req, res) => {
+    app.post("/toys", async (req, res) => {
       const toyInfo = req.body;
-      const result = await toyCollection.insertOne(toyInfo)
-      res.send(result)
-    })
+      const result = await toyCollection.insertOne(toyInfo);
+      res.send(result);
+    });
 
     app.get("/toys", async (req, res) => {
       const result = await toyCollection.find().limit(20).toArray();
@@ -51,19 +51,26 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/toySearch', async(req, res) => {
+    app.get("/toySearch", async (req, res) => {
       const text = req.query.text;
-      const filter = {name: {$regex: text, $options: 'i'}}
-      const result = await toyCollection.find(filter).toArray()
-      res.send(result)
-    })
+      const filter = { name: { $regex: text, $options: "i" } };
+      const result = await toyCollection.find(filter).toArray();
+      res.send(result);
+    });
 
-    // app.delete("/toyDelete/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const filter = { _id: new ObjectId(id) };
-    //   const result = await toyCollection.deleteOne(filter);
-    //   res.send(result);
-    // });
+    app.get("/myToys", async (req, res) => {
+      const email = req.query.email;
+      const filter = { email: email };
+      const result = await toyCollection.find(filter).toArray();
+      res.send(result);
+    });
+
+    app.delete("/toyDelete/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const result = await toyCollection.deleteOne(filter);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
