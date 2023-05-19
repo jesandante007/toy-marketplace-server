@@ -65,6 +65,17 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/toyUpdate/:id", async (req, res) => {
+      const id = req.params.id;
+      const body = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const UpdateDoc = {
+        $set: { ...body },
+      };
+      const result = await toyCollection.updateOne(filter, UpdateDoc);
+      res.send(result);
+    });
+
     app.delete("/toyDelete/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
