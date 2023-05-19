@@ -25,8 +25,21 @@ async function run() {
     // await client.connect();
     const toyCollection = client.db("toyDB").collection("toys");
 
+    app.get("/toys", async (req, res) => {
+      const result = await toyCollection.find().limit(20).toArray();
+      res.send(result);
+    });
+
+    app.get("/toyDetails/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await toyCollection.findOne(query);
+      res.send(result);
+    });
+
     app.get("/toys/:category", async (req, res) => {
-      const category = req.params.category;
+      const cat = req.params.category;
+      const category = cat.toString();
       const filter = { category: category };
       const result = await toyCollection.find(filter).toArray();
       res.send(result);
