@@ -2,11 +2,31 @@ const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
 const app = express();
 
+// middleware
 app.use(cors());
 app.use(express.json());
+const verifyJWT = (req, res, next) => {
+  const authorization = req.headers.authorization;
+  if (!authorization) {
+    return res
+      .status(401)
+      .send({ error: true, message: "unauthorized access" });
+  }
+  const token = authorization.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) => {
+    if (error) {
+      return res
+        .status(401)
+        .send({ error: true, message: "unauthorized access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+};
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.jtzepo9.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -24,6 +44,14 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     // await client.connect();
     const toyCollection = client.db("toyDB").collection("toys");
+
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
 
     app.post("/toys", async (req, res) => {
       const toyInfo = req.body;
@@ -58,15 +86,21 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/myToys", async (req, res) => {
-      const email = req.query.email;
-      const sort = req.query.sort;
+    app.get("/myToys", verifyJWT, async (req, res) => {
+      const decoded = req.decoded;
+      if (decoded.email != req.query?.email) {
+        return res
+        .status(403)
+        .send({ error: true, message: "forbidden access" });
+      }
+      const email = req.query?.email;
+      const sort = req.query?.sort;
       const filter = { email: email };
-      let srt = {}
-      if(sort == 'asc') {
-        srt = {price: 1}
-      }else{
-        srt = {price: -1}
+      let srt = {};
+      if (sort == "asc") {
+        srt = { price: 1 };
+      } else {
+        srt = { price: -1 };
       }
       const result = await toyCollection.find(filter).sort(srt).toArray();
       res.send(result);
